@@ -1,4 +1,5 @@
 export type Result<T, E extends Error> = Success<T> | Failure<E>;
+export type PromiseResult<T, E extends Error> = Promise<Result<T, E>>;
 
 export class Success<T> {
   readonly value: T;
@@ -29,5 +30,31 @@ export class Failure<E extends Error> {
 
   isFailure(): this is Failure<E> {
     return true;
+  }
+}
+
+export function tryCatch<T, E extends Error>(
+  func: () => T,
+  // 発生する例外は any なので適切な型に変換するための関数を与える。
+  onCatch: (e: unknown) => E
+): Result<T, E> {
+  try {
+    const value = func();
+    return new Success<T>(value);
+  } catch (err) {
+    return new Failure<E>(onCatch(err));
+  }
+}
+
+export async function tryCatchAsync<T, E extends Error>(
+  func: () => Promise<T>,
+  // 発生する例外は any なので適切な型に変換するための関数を与える。
+  onCatch: (e: unknown) => E
+): PromiseResult<T, E> {
+  try {
+    const value = await func();
+    return new Success<T>(value);
+  } catch (err) {
+    return new Failure<E>(onCatch(err));
   }
 }
